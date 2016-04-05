@@ -269,7 +269,7 @@ if (typeof module !== "undefined" && typeof exports !== "undefined" && module.ex
                     if(!template) {
                         template =
                             '<ul {{options.ulClass}} >' +
-                            '<li ng-repeat="node in node.{{options.nodeChildren}} | filter:filterExpression:filterComparator {{options.orderBy}}" ng-class="headClass(node)" {{options.liClass}}' +
+                            '<li ng-repeat="node in node.{{options.nodeChildren}} | filter:filterExpression:filterComparator as results {{options.orderBy}}" ng-class="headClass(node)" {{options.liClass}}' +
                             'set-node-to-data>' +
                             '<i class="tree-branch-head" ng-class="iBranchClass()" ng-click="selectNodeHead(node)"></i>' +
                             '<i class="tree-leaf-head {{options.iLeafClass}}"></i>' +
@@ -296,6 +296,39 @@ if (typeof module !== "undefined" && typeof exports !== "undefined" && module.ex
                                 if (angular.equals(scope.node, newValue))
                                     return;
                                 scope.node = newValue;
+                            }
+                        });
+
+                        var cachedExpandedNodes = [];
+
+                        // We now output the filter results, which when this changes it allows to auto expand
+                        scope.$watch('results', function(nv, ov) {
+                            console.log('results');
+                            console.log(nv);
+
+                            if(nv == ov)
+                                return;
+
+                            if(!scope.filterExpression){
+                                scope.expandedNodes = cachedExpandedNodes
+                                return;
+                            }
+                            
+                            cachedExpandedNodes = angular.copy(scope.expandedNodes);
+                            var autoExpanded = [];
+
+                            recursivelyExpand(nv);
+                            scope.expandedNodes = autoExpanded;
+                            
+                            function recursivelyExpand(nodes) {
+                                for (var i = nodes.length - 1; i >= 0; i--) {
+                                    if(!scope.options.isLeaf(nodes[i]))
+                                        autoExpanded.push(nodes[i]);
+
+                                    if(nodes[i][scope.options.nodeChildren] && nodes[i][scope.options.nodeChildren].length > 0){
+                                        recursivelyExpand(nodes[i][scope.options.nodeChildren]);
+                                    }
+                                }
                             }
                         });
 
