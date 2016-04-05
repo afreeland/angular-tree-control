@@ -299,25 +299,31 @@ if (typeof module !== "undefined" && typeof exports !== "undefined" && module.ex
                             }
                         });
 
-                        var cachedExpandedNodes = [];
+                       var cachedExpandedNodes = null;
+
+                        scope.$watch('filterExpression', function(nv, ov) {
+                           if(nv == ov) return;
+
+                           if(ov && !nv)
+                            scope.expandedNodes = cachedExpandedNodes;
+                        });
 
                         // We now output the filter results, which when this changes it allows to auto expand
-                        scope.$watch('results', function(nv, ov) {
-                            console.log('results');
-                            console.log(nv);
-
-                            if(nv == ov)
-                                return;
+                        scope.$watchCollection('results', function(nv, ov) {
+                            if(nv == ov) return;
 
                             if(!scope.filterExpression){
-                                scope.expandedNodes = cachedExpandedNodes
                                 return;
                             }
                             
-                            cachedExpandedNodes = angular.copy(scope.expandedNodes);
+                            if(cachedExpandedNodes == null)
+                                cachedExpandedNodes = angular.copy(scope.expandedNodes);
+                            
                             var autoExpanded = [];
 
                             recursivelyExpand(nv);
+
+                            scope.expandedNodes.length = 0;
                             scope.expandedNodes = autoExpanded;
                             
                             function recursivelyExpand(nodes) {
